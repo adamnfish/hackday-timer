@@ -12,7 +12,10 @@ A 2-minute countdown timer built with Elm, bundled with Parcel, and tested with 
 - **Reset** button returns timer to 2:00
 - **+10s** button adds 10 seconds (useful for technical difficulties)
 - Timer automatically stops at `0:00`
-- **Audio alarm** - Plays a series of beeps when timer reaches 0
+- **Audio feedback system**:
+  - Single beep at 10 seconds (early warning)
+  - Single beep at 5, 4, 3, 2, 1 seconds (countdown)
+  - Pleasant ending melody at 0 seconds ("Shave and a haircut, two bits!" - starts softly and builds up)
 - **Responsive display** - Timer scales to fill most of the screen on any device
 - Color-coded states:
   - Gray (#333) - Not started

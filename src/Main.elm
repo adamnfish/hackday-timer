@@ -8,7 +8,7 @@ import Json.Decode as Decode
 import Time
 
 
-port playSound : () -> Cmd msg
+port playSound : String -> Cmd msg
 
 
 main : Program () Model Msg
@@ -98,8 +98,12 @@ update msg model =
                             Running
 
                     soundCmd =
-                        if newSeconds <= 0 then
-                            playSound ()
+                        if newSeconds == 0 then
+                            playSound "alarm"
+                        else if newSeconds == 10 then
+                            playSound "beep"
+                        else if newSeconds <= 5 && newSeconds >= 1 then
+                            playSound "beep"
                         else
                             Cmd.none
                 in

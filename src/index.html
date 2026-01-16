@@ -9,40 +9,14 @@
     <div id="app"></div>
     <script type="module">
         import { Elm } from './Main.elm';
+        import { initAudio } from './audio.js';
 
         const app = Elm.Main.init({
             node: document.getElementById('app')
         });
 
-        // Audio feedback using Web Audio API
-        app.ports.playSound.subscribe(() => {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-            // Create a series of beeps for alarm effect
-            const beepTimes = [0, 0.15, 0.3, 0.45, 0.6];
-
-            beepTimes.forEach((time) => {
-                // Create oscillator for beep sound
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                // Set frequency (higher = more urgent)
-                oscillator.frequency.value = 880; // A5 note
-
-                // Set volume envelope for a sharp beep
-                const now = audioContext.currentTime + time;
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-
-                // Play the beep
-                oscillator.start(now);
-                oscillator.stop(now + 0.1);
-            });
-        });
+        // Initialize audio feedback system
+        initAudio(app);
     </script>
 </body>
 </html>
