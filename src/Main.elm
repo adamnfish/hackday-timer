@@ -103,17 +103,21 @@ view model =
         , style "background-color" "#f5f5f5"
         ]
         [ h1
-            [ style "font-size" "96px"
+            [ style "font-size" "clamp(180px, 40vw, 800px)"
             , style "margin" "0"
+            , style "padding" "20px"
             , style "color" (timerColor model.state)
-            , style "font-weight" "300"
+            , style "font-weight" "200"
             , style "font-variant-numeric" "tabular-nums"
+            , style "line-height" "1"
+            , style "letter-spacing" "0.02em"
             ]
             [ text (formatTime model.secondsRemaining) ]
         , div
-            [ style "margin-top" "40px"
+            [ style "position" "fixed"
+            , style "bottom" "20px"
             , style "display" "flex"
-            , style "gap" "16px"
+            , style "gap" "8px"
             ]
             (viewButtons model)
         ]
@@ -178,15 +182,16 @@ styledButton : Msg -> String -> String -> Html Msg
 styledButton msg label color =
     button
         [ onClick msg
-        , style "padding" "16px 32px"
-        , style "font-size" "18px"
-        , style "border" "none"
-        , style "border-radius" "8px"
-        , style "background-color" color
-        , style "color" "white"
+        , style "padding" "6px 12px"
+        , style "font-size" "12px"
+        , style "border" "1px solid #ddd"
+        , style "border-radius" "4px"
+        , style "background-color" "#fff"
+        , style "color" "#666"
         , style "cursor" "pointer"
-        , style "font-weight" "500"
+        , style "font-weight" "400"
         , style "transition" "all 0.2s"
-        , style "box-shadow" "0 2px 4px rgba(0,0,0,0.1)"
+        , style "box-shadow" "0 1px 2px rgba(0,0,0,0.05)"
+        , style "opacity" "0.7"
         ]
         [ text label ]
