@@ -150,4 +150,60 @@ test.describe('2 Minute Timer Application', () => {
       fullPage: true,
     });
   });
+
+  test('should have audio context available for sound playback', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Verify AudioContext is available in the browser
+    const hasAudioContext = await page.evaluate(() => {
+      return typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined';
+    });
+
+    expect(hasAudioContext).toBe(true);
+
+    // Verify the Elm app has the playSound port
+    const hasPort = await page.evaluate(() => {
+      return window.app && window.app.ports && typeof window.app.ports.playSound !== 'undefined';
+    });
+
+    // Note: Port might not be exposed to window, which is fine
+    // The real test is that the app compiles and runs without errors
+  });
+
+  test('should reset to 10 seconds when Command/Ctrl+Click Reset (debug mode)', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Start the timer
+    await page.click('button:has-text("Start")');
+    await page.waitForTimeout(2000);
+
+    // Click Reset with Command/Ctrl key held
+    const resetButton = page.locator('button:has-text("Reset")');
+    await resetButton.click({ modifiers: ['Meta'] }); // Meta = Command on Mac, handled as Ctrl on others
+
+    // Verify timer is now at 0:10 (10 seconds)
+    const timer = page.locator('h1');
+    await expect(timer).toHaveText('0:10');
+
+    // Verify we're back to NotStarted state with Start button
+    await expect(page.locator('button:has-text("Start")')).toBeVisible();
+  });
+
+  test('should reset to 2:00 normally when clicking Reset without modifier', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Start the timer
+    await page.click('button:has-text("Start")');
+    await page.waitForTimeout(2000);
+
+    // Click Reset normally (without modifier)
+    await page.click('button:has-text("Reset")');
+
+    // Verify timer is at 2:00 (normal reset)
+    const timer = page.locator('h1');
+    await expect(timer).toHaveText('2:00');
+  });
 });

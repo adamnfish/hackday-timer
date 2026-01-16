@@ -1,10 +1,14 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Html exposing (Html, button, div, h1, text)
 import Html.Attributes exposing (style)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, custom)
+import Json.Decode as Decode
 import Time
+
+
+port playSound : () -> Cmd msg
 
 
 main : Program () Model Msg
@@ -43,7 +47,7 @@ type Msg
     = Start
     | Pause
     | Resume
-    | Reset
+    | Reset Bool
     | Tick
 
 
@@ -59,8 +63,15 @@ update msg model =
         Resume ->
             ( { model | state = Running }, Cmd.none )
 
-        Reset ->
-            ( { secondsRemaining = 120, state = NotStarted }, Cmd.none )
+        Reset isDebugMode ->
+            let
+                resetSeconds =
+                    if isDebugMode then
+                        10
+                    else
+                        120
+            in
+            ( { secondsRemaining = resetSeconds, state = NotStarted }, Cmd.none )
 
         Tick ->
             if model.state == Running then
@@ -74,8 +85,14 @@ update msg model =
 
                         else
                             Running
+
+                    soundCmd =
+                        if newSeconds <= 0 then
+                            playSound ()
+                        else
+                            Cmd.none
                 in
-                ( { model | secondsRemaining = max 0 newSeconds, state = newState }, Cmd.none )
+                ( { model | secondsRemaining = max 0 newSeconds, state = newState }, soundCmd )
 
             else
                 ( model, Cmd.none )
@@ -166,16 +183,57 @@ viewButtons model =
 
         Running ->
             [ styledButton Pause "Pause" "#FFA500"
-            , styledButton Reset "Reset" "#666"
+            , resetButton
             ]
 
         Paused ->
             [ styledButton Resume "Resume" "#5A9FD4"
-            , styledButton Reset "Reset" "#666"
+            , resetButton
             ]
 
         Finished ->
-            [ styledButton Reset "Reset" "#666" ]
+            [ resetButton ]
+
+
+resetButton : Html Msg
+resetButton =
+    button
+        [ onClickWithModifier (\modifierPressed -> Reset modifierPressed)
+        , style "padding" "6px 12px"
+        , style "font-size" "12px"
+        , style "border" "1px solid #ddd"
+        , style "border-radius" "4px"
+        , style "background-color" "#fff"
+        , style "color" "#666"
+        , style "cursor" "pointer"
+        , style "font-weight" "400"
+        , style "transition" "all 0.2s"
+        , style "box-shadow" "0 1px 2px rgba(0,0,0,0.05)"
+        , style "opacity" "0.7"
+        ]
+        [ text "Reset" ]
+
+
+onClickWithModifier : (Bool -> msg) -> Html.Attribute msg
+onClickWithModifier toMsg =
+    let
+        modifierDecoder =
+            Decode.oneOf
+                [ Decode.field "metaKey" Decode.bool  -- Command on Mac
+                , Decode.field "ctrlKey" Decode.bool  -- Ctrl on Windows/Linux
+                ]
+
+        decoder =
+            Decode.map
+                (\isModified ->
+                    { message = toMsg isModified
+                    , stopPropagation = False
+                    , preventDefault = False
+                    }
+                )
+                modifierDecoder
+    in
+    custom "click" decoder
 
 
 styledButton : Msg -> String -> String -> Html Msg
@@ -195,3 +253,4 @@ styledButton msg label color =
         , style "opacity" "0.7"
         ]
         [ text label ]
+
