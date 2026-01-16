@@ -177,40 +177,70 @@ formatTime totalSeconds =
 
 viewButtons : Model -> List (Html Msg)
 viewButtons model =
-    case model.state of
-        NotStarted ->
-            [ styledButton Start "Start" "#5A9FD4" ]
+    let
+        ( toggleLabel, toggleMsg, toggleEnabled ) =
+            case model.state of
+                NotStarted ->
+                    ( "Start", Just Start, True )
 
-        Running ->
-            [ styledButton Pause "Pause" "#FFA500"
-            , resetButton
-            ]
+                Running ->
+                    ( "Pause", Just Pause, True )
 
-        Paused ->
-            [ styledButton Resume "Resume" "#5A9FD4"
-            , resetButton
-            ]
+                Paused ->
+                    ( "Resume", Just Resume, True )
 
-        Finished ->
-            [ resetButton ]
+                Finished ->
+                    ( "Start", Just Start, False )
+    in
+    [ toggleButton toggleLabel toggleMsg toggleEnabled
+    , resetButtonWithState (model.state /= NotStarted)
+    ]
 
 
-resetButton : Html Msg
-resetButton =
+baseStyles : Bool -> List (Html.Attribute msg)
+baseStyles enabled =
+    [ style "padding" "6px 12px"
+    , style "font-size" "12px"
+    , style "border" "1px solid #ddd"
+    , style "border-radius" "4px"
+    , style "background-color" "#fff"
+    , style "color" (if enabled then "#666" else "#ccc")
+    , style "cursor" (if enabled then "pointer" else "not-allowed")
+    , style "font-weight" "400"
+    , style "transition" "all 0.2s"
+    , style "box-shadow" "0 1px 2px rgba(0,0,0,0.05)"
+    , style "opacity" (if enabled then "0.7" else "0.4")
+    , style "min-width" "70px"
+    ]
+
+
+toggleButton : String -> Maybe Msg -> Bool -> Html Msg
+toggleButton label maybeMsg enabled =
+    let
+        clickHandler =
+            case ( enabled, maybeMsg ) of
+                ( True, Just msg ) ->
+                    [ onClick msg ]
+
+                _ ->
+                    []
+    in
     button
-        [ onClickWithModifier (\modifierPressed -> Reset modifierPressed)
-        , style "padding" "6px 12px"
-        , style "font-size" "12px"
-        , style "border" "1px solid #ddd"
-        , style "border-radius" "4px"
-        , style "background-color" "#fff"
-        , style "color" "#666"
-        , style "cursor" "pointer"
-        , style "font-weight" "400"
-        , style "transition" "all 0.2s"
-        , style "box-shadow" "0 1px 2px rgba(0,0,0,0.05)"
-        , style "opacity" "0.7"
-        ]
+        (baseStyles enabled ++ clickHandler)
+        [ text label ]
+
+
+resetButtonWithState : Bool -> Html Msg
+resetButtonWithState enabled =
+    let
+        clickHandler =
+            if enabled then
+                [ onClickWithModifier (\modifierPressed -> Reset modifierPressed) ]
+            else
+                []
+    in
+    button
+        (baseStyles enabled ++ clickHandler)
         [ text "Reset" ]
 
 
@@ -235,22 +265,4 @@ onClickWithModifier toMsg =
     in
     custom "click" decoder
 
-
-styledButton : Msg -> String -> String -> Html Msg
-styledButton msg label color =
-    button
-        [ onClick msg
-        , style "padding" "6px 12px"
-        , style "font-size" "12px"
-        , style "border" "1px solid #ddd"
-        , style "border-radius" "4px"
-        , style "background-color" "#fff"
-        , style "color" "#666"
-        , style "cursor" "pointer"
-        , style "font-weight" "400"
-        , style "transition" "all 0.2s"
-        , style "box-shadow" "0 1px 2px rgba(0,0,0,0.05)"
-        , style "opacity" "0.7"
-        ]
-        [ text label ]
 
