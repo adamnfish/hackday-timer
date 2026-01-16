@@ -134,11 +134,12 @@ view model =
             [ style "font-size" "clamp(180px, 40vw, 800px)"
             , style "margin" "0"
             , style "padding" "20px"
-            , style "color" (timerColor model.state)
+            , style "color" (timerColor model.state model.secondsRemaining)
             , style "font-weight" "200"
             , style "font-variant-numeric" "tabular-nums"
             , style "line-height" "1"
             , style "letter-spacing" "0.02em"
+            , style "transition" "color 0.5s ease-in-out"
             ]
             [ text (formatTime model.secondsRemaining) ]
         , div
@@ -151,20 +152,23 @@ view model =
         ]
 
 
-timerColor : TimerState -> String
-timerColor state =
+timerColor : TimerState -> Int -> String
+timerColor state secondsRemaining =
     case state of
         NotStarted ->
             "#333"
 
         Running ->
-            "#5A9FD4"
+            if secondsRemaining <= 10 then
+                "#FFA500"  -- Yellow/orange for last 10 seconds
+            else
+                "#5A9FD4"  -- Blue when running normally
 
         Paused ->
-            "#FFA500"
+            "#8BA8BD"  -- Desaturated blue (less vibrant, more gray)
 
         Finished ->
-            "#E74C3C"
+            "#E74C3C"  -- Red
 
 
 formatTime : Int -> String

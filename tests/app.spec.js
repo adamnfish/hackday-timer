@@ -117,8 +117,36 @@ test.describe('2 Minute Timer Application', () => {
     await page.click('button:has-text("Start")');
     await expect(timer).toHaveCSS('color', 'rgb(90, 159, 212)'); // #5A9FD4
 
-    // Paused state - orange
+    // Paused state - desaturated blue
     await page.click('button:has-text("Pause")');
+    await expect(timer).toHaveCSS('color', 'rgb(139, 168, 189)'); // #8BA8BD
+  });
+
+  test('should change to yellow/orange in last 10 seconds', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Use debug mode to set timer to 10 seconds
+    await page.click('button:has-text("Start")');
+    await page.waitForTimeout(100);
+    await page.click('button:has-text("Reset")', { modifiers: ['Meta'] });
+
+    const timer = page.locator('h1');
+    await expect(timer).toHaveText('0:10');
+
+    // Timer should still be gray (NotStarted)
+    await expect(timer).toHaveCSS('color', 'rgb(51, 51, 51)'); // #333
+
+    // Start the timer
+    await page.click('button:has-text("Start")');
+
+    // Timer should turn yellow/orange immediately since we're at 10 seconds
+    await expect(timer).toHaveCSS('color', 'rgb(255, 165, 0)'); // #FFA500 - orange warning
+
+    // Wait for a couple seconds
+    await page.waitForTimeout(2000);
+
+    // Should still be orange since we're still in last 10 seconds
     await expect(timer).toHaveCSS('color', 'rgb(255, 165, 0)'); // #FFA500
   });
 
@@ -341,8 +369,8 @@ test.describe('2 Minute Timer Application', () => {
     // Timer should now show 0:10
     await expect(timer).toHaveText('0:10');
 
-    // Timer color should change from red to orange (Paused state)
-    await expect(timer).toHaveCSS('color', 'rgb(255, 165, 0)'); // #FFA500
+    // Timer color should change from red to desaturated blue (Paused state)
+    await expect(timer).toHaveCSS('color', 'rgb(139, 168, 189)'); // #8BA8BD
 
     // Toggle button should now show "Resume" and be enabled
     await expect(toggleButton).toHaveText('Resume');
@@ -352,8 +380,8 @@ test.describe('2 Minute Timer Application', () => {
     // And we should be able to resume the timer
     await page.click('button:has-text("Resume")');
 
-    // Timer should start counting down - verify it's running (blue color)
-    await expect(timer).toHaveCSS('color', 'rgb(90, 159, 212)'); // #5A9FD4
+    // Timer should start counting down - verify it's running (orange because we're in last 10 seconds)
+    await expect(timer).toHaveCSS('color', 'rgb(255, 165, 0)'); // #FFA500 - orange warning
 
     // Wait a bit and verify timer has decreased
     await page.waitForTimeout(1500);
