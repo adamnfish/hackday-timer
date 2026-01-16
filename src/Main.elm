@@ -48,6 +48,7 @@ type Msg
     | Pause
     | Resume
     | Reset Bool
+    | AddTime
     | Tick
 
 
@@ -72,6 +73,16 @@ update msg model =
                         120
             in
             ( { secondsRemaining = resetSeconds, state = NotStarted }, Cmd.none )
+
+        AddTime ->
+            let
+                newState =
+                    if model.state == Finished then
+                        Paused
+                    else
+                        model.state
+            in
+            ( { model | secondsRemaining = model.secondsRemaining + 10, state = newState }, Cmd.none )
 
         Tick ->
             if model.state == Running then
@@ -191,8 +202,12 @@ viewButtons model =
 
                 Finished ->
                     ( "Start", Just Start, False )
+
+        addTimeEnabled =
+            model.state /= NotStarted
     in
     [ toggleButton toggleLabel toggleMsg toggleEnabled
+    , addTimeButton addTimeEnabled
     , resetButtonWithState (model.state /= NotStarted)
     ]
 
@@ -228,6 +243,20 @@ toggleButton label maybeMsg enabled =
     button
         (baseStyles enabled ++ clickHandler)
         [ text label ]
+
+
+addTimeButton : Bool -> Html Msg
+addTimeButton enabled =
+    let
+        clickHandler =
+            if enabled then
+                [ onClick AddTime ]
+            else
+                []
+    in
+    button
+        (baseStyles enabled ++ clickHandler)
+        [ text "+10s" ]
 
 
 resetButtonWithState : Bool -> Html Msg

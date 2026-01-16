@@ -206,4 +206,164 @@ test.describe('2 Minute Timer Application', () => {
     const timer = page.locator('h1');
     await expect(timer).toHaveText('2:00');
   });
+
+  test('should add 10 seconds when +10s button is clicked', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Start timer to enable Reset button
+    await page.click('button:has-text("Start")');
+    await page.waitForTimeout(100);
+
+    // Use debug mode to set timer to 10 seconds
+    await page.click('button:has-text("Reset")', { modifiers: ['Meta'] });
+
+    // Start and immediately pause
+    await page.click('button:has-text("Start")');
+    await page.click('button:has-text("Pause")');
+
+    const timer = page.locator('h1');
+
+    // Should show 0:10
+    await expect(timer).toHaveText('0:10');
+
+    // Click +10s button
+    await page.click('button:has-text("+10s")');
+
+    // Should now show 0:20
+    await expect(timer).toHaveText('0:20');
+  });
+
+  test('should allow multiple clicks of +10s button to add multiple chunks', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Start timer to enable Reset button
+    await page.click('button:has-text("Start")');
+    await page.waitForTimeout(100);
+
+    // Use debug mode to set timer to 10 seconds
+    await page.click('button:has-text("Reset")', { modifiers: ['Meta'] });
+
+    // Start and immediately pause
+    await page.click('button:has-text("Start")');
+    await page.click('button:has-text("Pause")');
+
+    const timer = page.locator('h1');
+    await expect(timer).toHaveText('0:10');
+
+    // Click +10s button three times
+    await page.click('button:has-text("+10s")');
+    await page.click('button:has-text("+10s")');
+    await page.click('button:has-text("+10s")');
+
+    // Should now show 0:40 (10 + 30)
+    await expect(timer).toHaveText('0:40');
+  });
+
+  test('should allow time to go above 2 minutes with +10s button', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const timer = page.locator('h1');
+
+    // Start at 2:00
+    await expect(timer).toHaveText('2:00');
+
+    // Start to enable the +10s button
+    await page.click('button:has-text("Start")');
+
+    // Add 10 seconds multiple times to definitely go over 2:00
+    await page.click('button:has-text("+10s")');
+    await page.click('button:has-text("+10s")');
+    await page.click('button:has-text("+10s")');
+
+    // Pause to check the value
+    await page.click('button:has-text("Pause")');
+
+    await page.waitForTimeout(100);
+
+    const timeAfterAdd = await timer.textContent();
+    const parseTime = (timeStr) => {
+      const [min, sec] = timeStr.split(':').map(s => parseInt(s, 10));
+      return min * 60 + sec;
+    };
+    const seconds = parseTime(timeAfterAdd);
+
+    // With 30 seconds added, we should definitely be above 2:00 (120 seconds)
+    // Even accounting for a few seconds of countdown
+    expect(seconds).toBeGreaterThan(125);
+  });
+
+  test('+10s button should be disabled in NotStarted state', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // In NotStarted state, +10s button should be disabled
+    const addTimeButton = page.locator('button:has-text("+10s")');
+    await expect(addTimeButton).toBeVisible();
+
+    // Check if button appears disabled (has disabled styling)
+    const opacity = await addTimeButton.evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(opacity)).toBeLessThan(0.5); // Should have reduced opacity when disabled
+  });
+
+  test('+10s button should re-enable Resume when timer reaches 0:00', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Use debug mode to set timer to 10 seconds for faster test
+    await page.click('button:has-text("Start")');
+    await page.waitForTimeout(100);
+    await page.click('button:has-text("Reset")', { modifiers: ['Meta'] });
+
+    const timer = page.locator('h1');
+    await expect(timer).toHaveText('0:10');
+
+    // Start the timer
+    await page.click('button:has-text("Start")');
+
+    // Wait for timer to reach 0:00
+    await expect(timer).toHaveText('0:00', { timeout: 12000 });
+
+    // Verify we're in Finished state - timer should be red
+    await expect(timer).toHaveCSS('color', 'rgb(231, 76, 60)'); // #E74C3C
+
+    // Start button should be disabled (grayed out)
+    const toggleButton = page.locator('button').first(); // The Start/Pause/Resume button
+    await expect(toggleButton).toHaveText('Start');
+    const startOpacity = await toggleButton.evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(startOpacity)).toBeLessThan(0.5);
+
+    // Click +10s button to add time
+    await page.click('button:has-text("+10s")');
+
+    // Timer should now show 0:10
+    await expect(timer).toHaveText('0:10');
+
+    // Timer color should change from red to orange (Paused state)
+    await expect(timer).toHaveCSS('color', 'rgb(255, 165, 0)'); // #FFA500
+
+    // Toggle button should now show "Resume" and be enabled
+    await expect(toggleButton).toHaveText('Resume');
+    const resumeOpacity = await toggleButton.evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(resumeOpacity)).toBeGreaterThan(0.5);
+
+    // And we should be able to resume the timer
+    await page.click('button:has-text("Resume")');
+
+    // Timer should start counting down - verify it's running (blue color)
+    await expect(timer).toHaveCSS('color', 'rgb(90, 159, 212)'); // #5A9FD4
+
+    // Wait a bit and verify timer has decreased
+    await page.waitForTimeout(1500);
+    const timeAfterResume = await timer.textContent();
+
+    // Should be less than 0:10 (probably 0:08 or 0:09)
+    const parseTime = (timeStr) => {
+      const [min, sec] = timeStr.split(':').map(s => parseInt(s, 10));
+      return min * 60 + sec;
+    };
+    expect(parseTime(timeAfterResume)).toBeLessThan(10);
+  });
 });
