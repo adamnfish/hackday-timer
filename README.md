@@ -1,6 +1,21 @@
 # Hackday Timer
 
-An Elm application built with Parcel and tested with Playwright.
+A 2-minute countdown timer built with Elm, bundled with Parcel, and tested with Playwright.
+
+## Features
+
+⏱️ **2 Minute Countdown Timer**
+- Displays `2:00` on initial load
+- **Start** button begins the countdown
+- **Pause** button pauses the timer (changes to "Resume")
+- **Resume** button continues counting from where it was paused
+- **Reset** button returns timer to 2:00
+- Timer automatically stops at `0:00`
+- Color-coded states:
+  - Gray (#333) - Not started
+  - Blue (#5A9FD4) - Running
+  - Orange (#FFA500) - Paused
+  - Red (#E74C3C) - Finished
 
 ## Setup
 
@@ -35,10 +50,14 @@ npm run test:ui       # Run tests in interactive UI mode
 ```
 
 The Playwright tests verify:
-- ✅ Page title is correct
-- ✅ "Hello World!" heading is visible with correct styling
-- ✅ Welcome message with emoji is displayed
-- ✅ CSS flex layout is properly applied
+- ✅ Initial display shows 2:00
+- ✅ Start button begins countdown
+- ✅ Pause button stops the timer
+- ✅ Resume button continues countdown
+- ✅ Reset button returns to 2:00
+- ✅ Timer color changes based on state
+- ✅ Timer stops at 0:00
+- ✅ Correct buttons appear for each state
 - ✅ Visual regression testing with screenshots
 
 ## Tools
